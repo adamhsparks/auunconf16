@@ -476,28 +476,24 @@ if(!require("awaptools"))
 library(awaptools)
 ```
 
-```{r, echo = TRUE, eval = TRUE, warning = FALSE, error = FALSE, message=FALSE}
+```{r, echo = TRUE, eval = TRUE, warning = FALSE, error = FALSE}
 
 vars <- c("maxave", "minave", "totals")
 
 for (measure in vars) {
-  get_awap_data(start = "2016-04-21", end = "2016-04-22", measure = measure)
+  get_awap_data(start = "2016-04-21", end = "2016-05-09", measure = measure)
 }
 
 # load some, plot to check, and demonstrate conversion to GeoTIF
-cfiles <- stack(dir(pattern = "grid$"))
+cfiles <- stack(dir(pattern="grid$"))
 
-plot(cfiles, nc = 2) # plot to look at
-
-# write grid files as GeoTif files to disk with compression
-# to save space
-writeRaster(cfiles, filename = "GTif/AWAP", format = "GTiff",
-            bylayer = TRUE, overwrite = TRUE, suffix = "names",
-            dataType = "INT2S", options = c("COMPRESS=LZW"))
+plot(cfiles) # plot to look at
+writeRaster(cfiles, filename = "AWAP", format = "GTiff",
+            bylayer = TRUE, overwrite = TRUE, suffix = "names")
 
 ```
 
-For additional processing codes see the short demo in [https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md](https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md)
+For additional processing codes see the short demo in [https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md]()
 
 To start cleaning up the grid files for mapping or looking at specific areas,
 download Australia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
@@ -518,7 +514,7 @@ QLD <- AUS[AUS@data$NAME_1 == "Queensland", ]
 Crop, mask and plot the raster stack using Australia
 ```{r, echo = TRUE, warning = FALSE, eval = TRUE, error = FALSE}
 AUS_data <- mask(cfiles, AUS)
-plot(AUS_data, nc = 2)
+plot(AUS_data)
 ```
 
 Crop, plot and then mask and plot the raster stack using QLD to see the
@@ -526,9 +522,9 @@ difference between cropping and masking.
 
 ```{r, echo = TRUE, warning = FALSE, eval = TRUE, error = FALSE}
 QLD_data <- crop(cfiles, QLD)
-plot(QLD_data, nc = 2)
+plot(QLD_data)
 
 QLD_data <- mask(QLD_data, QLD)
-plot(QLD_data, nc = 2)
+plot(QLD_data)
 
 ```
