@@ -500,7 +500,7 @@ writeRaster(cfiles, filename = "GTif/AWAP", format = "GTiff",
 For additional processing codes see the short demo in [https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md](https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md)
 
 To start cleaning up the grid files for mapping or looking at specific areas,
-download Australia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
+download Oztralia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
 
 Using the GADM data, crop the grid files and mask using the administrative
 boundaries to map the area of interest.
@@ -508,17 +508,17 @@ boundaries to map the area of interest.
 ```{r, echo = TRUE, eval = TRUE, warning = FALSE, error = FALSE}
 
 library(raster)
-AUS <- getData(name = "GADM", download = TRUE, country = "AUS", level = 2)
+Oz <- getData(name = "GADM", download = TRUE, country = "Oz", level = 2)
 
-# Subset Australia data to QLD
-QLD <- AUS[AUS@data$NAME_1 == "Queensland", ]
+# Subset Oztralia data to QLD
+QLD <- Oz[Oz@data$NAME_1 == "Queensland", ]
 
 ```
 
-Crop, mask and plot the raster stack using Australia
+Crop, mask and plot the raster stack using Oztralia
 ```{r, echo = TRUE, warning = FALSE, eval = TRUE, error = FALSE}
-AUS_data <- mask(cfiles, AUS)
-plot(AUS_data, nc = 2)
+Oz_data <- mask(cfiles, Oz)
+plot(Oz_data, nc = 2)
 ```
 
 Crop, plot and then mask and plot the raster stack using QLD to see the
