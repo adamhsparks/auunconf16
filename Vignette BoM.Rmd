@@ -18,7 +18,7 @@ This vignette is designed to outline methods for accessing Bureau of Meteorology
 
 ### Installation
 
-As some of the needed functionality is still in active development and the rnoaa package needs to be downloaded directly from github instead of Cran.
+As some of the needed functionality is still in active development and the rnoaa package needs to be downloaded directly from GitHub instead of CRAN.
 
 ```{r, echo = T, eval = F}
 # devtools::install_github("rOpenScieLabs/rnoaa")
@@ -444,207 +444,88 @@ Some of the common sources of erroreous observations within the records are:
 
 Contributions of code to assess station record quality would be desirable. Currently there is no one size fits all approach.
 
-## Create a new section about AWAP data
-## Australian Water Availability Project (AWAP)
-http://www.csiro.au/awap/
+## Using Australian Water Availability Project (AWAP) Data
 
-####
-This set of functions is used to automate downloading of AWAP data. Required are
-start date, end date and the weather variable(s) of interest. A `for()` loop
-follows that will download all dates from the BoM website.
-Ivan Hanigan, <ivan.hanigan@gmail.com>, J. Guillaume, F. Markham, G. Williamson
-and I. Szarka wrote the original versions of the functions used here to retrieve
-the AWAP grid files for the R packages,
-	[awaptools](https://github.com/swish-climate-impact-assessment/awaptools)
-and [swishdbtools](https://github.com/swish-climate-impact-assessment/swishdbtools).
+About AWAP, from CSIRO, http://www.csiro.au/awap/,
 
-Once these functions are loaded, you can download and process AWAP grids.
+    "The aim of the Australian Water Availability Project (AWAP) is to monitor
+    the state and trend of the terrestrial water balance of the Australian
+    continent, using model-data fusion methods to combine both measurements and
+    modelling. The project determines the past history and present state of soil
+    moisture and all water fluxes contributing to changes in soil moisture
+    (rainfall, transpiration, soil evaporation, surface runoff and deep
+    drainage), across the entire Australian continent at a spatial resolution
+    of 5 km. Using the same basic framework, the project provides soil
+    moistures and water fluxes over the Australian continent in three forms:
+    (1) weekly/monthly near-real-time reporting, (2) monthly/annual historical
+    time series from 1900, and (3) monthly climatologies (on request)."
 
-```{r, echo = T, eval = T}
+### awaptools
+An R package, [awaptools](https://github.com/swish-climate-impact-assessment/awaptools),
+created by Ivan Hanigan, ivan.hanigan@gmail.com, J. Guillaume, F. Markham,
+G. Williamson and I. Szarka is used here to retrieve the AWAP grid files. This package 
+allows for automated downloading of AWAP data. Required are start date, end date
+and the weather variable(s) of interest.
 
-get_awap_data <- function(start_date, end_date, measure_i) {
-  variables_list <- list_variables()
-  variable <- variables_list[which(variables_list$measure == measure_i), ]
-  datelist <- seq(as.Date(start_date), as.Date(end_date), 1)
-  for (date_i in datelist) {
-    date_i <- as.Date(date_i, origin = "1970-01-01")
-    sdate <- as.character(date_i)
-    edate <- date_i
-    if (!file.exists(sprintf("%s_%s%s.grid", measure_i, gsub("-", "", sdate),
-                             gsub("-", "", edate)))) {
-      get_data_range(variable = as.character(variable[, 1]),
-                     measure = as.character(variable[, 2]),
-                     timestep = as.character(variable[, 3]),
-                     startdate = as.POSIXct(sdate),
-                     enddate = as.POSIXct(edate))
-      fname <- sprintf("%s_%s%s.grid.Z", measure_i, gsub("-", "", sdate),
-                       gsub("-", "", edate))
-      if (file.info(fname)$size == 0) {
-        file.remove(fname)
-        next
-      }
-      os <- linux_operating_system()
-      if (os) {
-        uncompress_linux(filename = fname)
-      }
-      else {
-        decompress_7zip(zipFileName = fname, outputDirectory = getwd(), TRUE)
-      }
-    }
-  }
-}
+```{r, echo = TRUE, eval = TRUE, error = FALSE, error = FALSE}
+devtools::install_git("https://github.com/swish-climate-impact-assessment/awaptools")
+library(awaptools)
 
-get_data_range <- function(variable, measure, timestep, startdate, enddate) {
-  if (timestep == "daily") {
-    thisdate <- startdate
-    while (thisdate <= enddate) {
-      get_data(variable, measure, timestep, format(as.POSIXct(thisdate),
-                                                   "%Y%m%d"),
-               format(as.POSIXct(thisdate), "%Y%m%d"))
-      thisdate <- thisdate + as.double(as.difftime(1, units = "days"),
-                                       units = "secs")
-    }
-  }
-  else if (timestep == "month" | timestep == "monthly") {
-    timestep <- "month"
-    startdate <- as.POSIXlt(startdate)
-    startdate$mday <- 1
-    data_period_start <- seq(as.Date(startdate), as.Date(enddate),
-                             by = "month")
-    data_period_end <- as.Date(sapply(data_period_start,
-                                      FUN = function(x) {
-                                        as.character(seq(x, x + 40,
-                                                         by = "month")[2] - 1)
-                                      }
-    ))
-    for (i in 1:length(data_period_start)) {
-      get_data(variable, measure, timestep,
-               format(as.POSIXct(data_period_start[i]), "%Y%m%d"),
-               format(as.POSIXct(data_period_end[i]), "%Y%m%d"))
-    }
-  }
-}
-
-get_data <- function(variable, measure, timestep, startdate, enddate) {
-  url <- "http://www.bom.gov.au/web03/ncc/www/awap/{variable}/{measure}/{timestep}/grid/0.05/history/nat/{startdate}{enddate}.grid.Z"
-  url <- gsub("{variable}", variable, url, fixed = TRUE)
-  url <- gsub("{measure}", measure, url, fixed = TRUE)
-  url <- gsub("{timestep}", timestep, url, fixed = TRUE)
-  url <- gsub("{startdate}", startdate, url, fixed = TRUE)
-  url <- gsub("{enddate}", enddate, url, fixed = TRUE)
-  try(download.file(url, sprintf("%s_%s%s.grid.Z", measure, startdate, enddate),
-                    mode = "wb"))
-}
-
-list_variables <- function() {
-  variables_list <- "variable,measure,timestep\nrainfall,totals,daily\ntemperature,maxave,daily\ntemperature,minave,daily\nvprp,vprph09,daily\nvprp,vprph15,daily\nsolar,solarave,daily\nndvi,ndviave,month"
-  variables_list <- read.csv(textConnection(variables_list),
-                             stringsAsFactors = FALSE)
-  return(variables_list)
-}
-
-linux_operating_system <- function () {
-  if (length(grep("linux", sessionInfo()[[1]]$os)) == 1) {
-    os <- "Linux"
-    OsLinux <- TRUE
-  }
-  else if (length(grep("ming", sessionInfo()[[1]]$os)) == 1) {
-    os <- "Windows"
-    OsLinux <- FALSE
-  }
-  else {
-    print("Non Linux or Windows OS detected. Assume Linux-alike.")
-    os <- "Linux?"
-    OsLinux <- TRUE
-  }
-  return(OsLinux)
-}
-
-uncompress_linux <- function (filename){
-  print(filename)
-  system(sprintf("uncompress %s", filename))
-}
-
-decompress_7zip <- function(zipFileName, outputDirectory, delete) {
-  executableName <- executable_file_name()
-
-    arguments <- paste(sep = "", "e ", "\"", zipFileName, "\" ",
-        "\"-o", outputDirectory, "\" ", "")
-    print(arguments)
-    RunProcess(executableName, arguments)
-    if (delete) {
-        unlink(zipFileName)
-    }
-}
-
-executable_file_name <- function (){
-      executableName <- "C:\\Program Files\\7-Zip\\7z.exe"
-    if (file.exists(executableName)) {
-        return(executableName)
-    }
-    stop("Failed to find 7zip")
-}
-
-RunProcess <- function(executable, arguments) {
-    command = paste(sep = "", "\"", executable, "\" ", arguments)
-    print(command)
-    exitCode = system(command, intern = FALSE, ignore.stdout = FALSE,
-        ignore.stderr = FALSE, wait = TRUE, input = NULL, show.output.on.console = TRUE,
-        invisible = FALSE)
-    if (exitCode != 0) {
-        stop("Process returned error")
-    }
-    return(exitCode)
-}
-
-```
-After loading the previous functions, now it is possible to download AWAP grid
-files from the BoM, examples from I. Hanigan.
-
-```{r, echo = T, eval = T}
-
+# weather variables of interest
 vars <- c("maxave", "minave", "totals")
 
+# for loop to loop through all variables and download the data
 for (measure in vars) {
-  get_awap_data(start_date = "2016-04-19", end_date = "2016-04-20", measure)
+  get_awap_data(start = "2016-04-19", end = "2016-04-20", measure)
+  
 }
-
 ```
 
 To start cleaning up the grid files for mapping or looking at specific areas,
-download Australia, level 2 data from the [GADM database of Global
-Administrative Areas](http://gadm.org).
+download Australia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
 
 Using the GADM data, crop the grid files and mask using the administrative
 boundaries to map the area of interest.
 
-```{r, echo = T, eval = T}
+```{r, echo = TRUE, eval = TRUE, error = FALSE, warning = FALSE}
 
-library(raster)
-Oz <- getData(name = "GADM", download = TRUE, country = "AUS", level = 2)
+AUS <- getData(name = "GADM", download = TRUE, country = "AUS", level = 2)
 
 # Subset Australia data to QLD
-QLD <- Oz[Oz@data$NAME_1 == "Queensland", ]
+QLD <- AUS[AUS@data$NAME_1 == "Queensland", ]
 
 # Create a raster stack object of all the grid files we just downloaded
 cfiles <- stack(dir(pattern = "grid$"))
+
 ```
 
-Crop, mask and plot the raster stack using Australia
-```{r, echo = TRUE}
+Mask and plot the raster stack using Australia. First mask out the ocean area
+around Australia, second plot the resulting objects.
 
-Oz_data <- crop(cfiles, Oz)
-Oz_data <- mask(Oz_data, Oz)
-plot(Oz_data)
+```{r, echo = TRUE, eval = TRUE, error = FALSE, warning = FALSE}
+
+AUS_data <- mask(cfiles, AUS)
+
+plot(AUS_data)
+
 ```
 
-Crop, plot and then mask and plot the raster stack using QLD to see the
-difference between cropping and masking.
+Now crop and plot, mask and plot the rastersusing QLD to see the difference
+between cropping and masking. Cropping only removes the extra extent when using
+a spatial object with a raster. Masking sets values outside the area of interest,
+e.g. a polygon on Queensland, to NA.
 
-```{r, echo = TRUE}
+```{r, echo = TRUE, eval = TRUE, error = FALSE, warning = FALSE}
+
 QLD_data <- crop(cfiles, QLD)
+
+# Plot the cropped objects
 plot(QLD_data)
+
+# use the mask command to remove data not covering land
 QLD_data <- mask(QLD_data, QLD)
+
+# plot the masked objects
 plot(QLD_data)
 
 ```
