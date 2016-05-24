@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
   ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo=TRUE)
 oz_stations <- readRDS("oz_stations.RData")
 oz_tmax_stations <- oz_stations[oz_stations$element == "TMAX", ]
 oz_prcp_stations <- oz_stations[oz_stations$element == "PRCP", ]
@@ -432,7 +432,7 @@ It is important to note that although the station data is subject to some qualit
 
 Some of the common sources of erroreous observations within the records are:
 
-  * Changes to station location
+* Changes to station location
 * Changes in observer behaviour
 * Changes in instrumentation
 * Rounding errors
@@ -446,7 +446,7 @@ Contributions of code to assess station record quality would be desirable. Curre
 
 ## Using Australian Water Availability Project (AWAP) Data
 
-About AWAP, from CSIRO, http://www.csiro.au/awap/,
+About AWAP, from CSIRO, [http://www.csiro.au/awap/](http://www.csiro.au/awap/),
 
     "The aim of the Australian Water Availability Project (AWAP) is to monitor
     the state and trend of the terrestrial water balance of the Australian
@@ -467,7 +467,7 @@ G. Williamson and I. Szarka is used here to retrieve the AWAP grid files. This p
 allows for automated downloading of AWAP data. Required are start date, end date
 and the weather variable(s) of interest.
 
-```{r, echo = TRUE, eval = TRUE, warning = FALSE}
+```{r, echo=TRUE, eval=TRUE, warning=FALSE, error=FALSE, message=FALSE}
 if(!require("awaptools"))
 {
   library(devtools)
@@ -476,7 +476,7 @@ if(!require("awaptools"))
 library(awaptools)
 ```
 
-```{r, echo = TRUE, eval = TRUE, warning = FALSE, error = FALSE, message=FALSE}
+```{r, echo=TRUE, eval=TRUE, warning=FALSE, error=FALSE, message=FALSE}
 
 vars <- c("maxave", "minave", "totals")
 
@@ -489,9 +489,21 @@ cfiles <- stack(dir(pattern = "grid$"))
 
 plot(cfiles, nc = 2) # plot to look at
 
+# Check if GTif/AWAP directory exists, it not, create it (taken from http://stackoverflow.com/questions/4216753/check-existence-of-directory-and-create-if-doesnt-exist)
+mainDir <- getwd()
+subDir <- "GTif"
+
+if (file.exists(subDir)){
+    setwd(file.path(mainDir, subDir))
+} else {
+    dir.create(file.path(mainDir, subDir))
+    setwd(file.path(mainDir, subDir))
+
+}
+
 # write grid files as GeoTif files to disk with compression
 # to save space
-writeRaster(cfiles, filename = "GTif/AWAP", format = "GTiff",
+writeRaster(cfiles, filename = "GTif", format = "GTiff",
             bylayer = TRUE, overwrite = TRUE, suffix = "names",
             dataType = "INT2S", options = c("COMPRESS=LZW"))
 
@@ -500,23 +512,23 @@ writeRaster(cfiles, filename = "GTif/AWAP", format = "GTiff",
 For additional processing codes see the short demo in [https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md](https://github.com/swish-climate-impact-assessment/awaptools/blob/master/README.md)
 
 To start cleaning up the grid files for mapping or looking at specific areas,
-download Oztralia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
+download Australia, level 2 data from the [GADM database of Global Administrative Areas](http://gadm.org).
 
 Using the GADM data, crop the grid files and mask using the administrative
 boundaries to map the area of interest.
 
-```{r, echo = TRUE, eval = TRUE, warning = FALSE, error = FALSE}
+```{r, echo=TRUE, eval=TRUE, warning=FALSE, error=FALSE, message=FALSE}
 
 library(raster)
-Oz <- getData(name = "GADM", download = TRUE, country = "Oz", level = 2)
+Oz <- getData(name = "GADM", download = TRUE, country = "AUS", level = 2)
 
-# Subset Oztralia data to QLD
+# Subset Australia data to QLD
 QLD <- Oz[Oz@data$NAME_1 == "Queensland", ]
 
 ```
 
-Crop, mask and plot the raster stack using Oztralia
-```{r, echo = TRUE, warning = FALSE, eval = TRUE, error = FALSE}
+Crop, mask and plot the raster stack using Australia
+```{r, echo=TRUE, warning=FALSE, eval=TRUE, error=FALSE, message=FALSE}
 Oz_data <- mask(cfiles, Oz)
 plot(Oz_data, nc = 2)
 ```
@@ -524,7 +536,7 @@ plot(Oz_data, nc = 2)
 Crop, plot and then mask and plot the raster stack using QLD to see the
 difference between cropping and masking.
 
-```{r, echo = TRUE, warning = FALSE, eval = TRUE, error = FALSE}
+```{r, echo=TRUE, warning=FALSE, eval=TRUE, error=FALSE, message=FALSE}
 QLD_data <- crop(cfiles, QLD)
 plot(QLD_data, nc = 2)
 
