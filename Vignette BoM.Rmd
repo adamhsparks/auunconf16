@@ -1,6 +1,6 @@
 ---
 title: "Vignette for Accessing Australian Weather Data"
-author: "Ebony Jones, Andrew Robinson, Kate Saunders and Adam Sparks"
+author: "Ebony Jones, Ivan Hanigan, Andrew Robinson, Kate Saunders and Adam Sparks"
 date: "22 April 2016"
 output: pdf_document
 ---
